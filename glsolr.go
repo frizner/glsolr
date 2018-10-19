@@ -3,7 +3,6 @@ package glsolr
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -83,7 +82,7 @@ func Select(cLink, user, passw string, params url.Values, headers map[string]str
 
 	// Return a response status of  as a golang error
 	if resp.StatusCode >= 400 && resp.StatusCode < 500 {
-		return nil, errors.New(resp.Status)
+		return nil, fmt.Errorf(resp.Status)
 	}
 
 	respBody, err := ioutil.ReadAll(resp.Body)
@@ -99,7 +98,7 @@ func Select(cLink, user, passw string, params url.Values, headers map[string]str
 
 	// Return Solr error as golang error
 	if resp.StatusCode >= 500 {
-		return &solrResp, errors.New(solrResp.Error.Msg)
+		return &solrResp, fmt.Errorf(solrResp.Error.Msg)
 	}
 	return &solrResp, nil
 }
