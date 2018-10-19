@@ -115,8 +115,6 @@ func Select(cLink, user, passw string, params url.Values, headers map[string]str
 
 // CursorSelect returns generator as channel to receive results of a cursor select query or error
 func CursorSelect(cLink, user, passw string, params url.Values, headers map[string]string, client *http.Client) (<-chan interface{}, error) {
-	// Only json format can be used to receive nextCursorMark value
-	params.Set("wt", "json")
 
 	// Set cursorMark parameter if that isn't set
 	if params.Get("cursorMark") == "" {
