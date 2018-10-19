@@ -1,5 +1,7 @@
 package glsolr
 
+// glsolr supports only JSON format to request Solr
+
 import (
 	"encoding/base64"
 	"encoding/json"
@@ -41,6 +43,7 @@ type Response struct {
 	Highlighting   json.RawMessage `json:"highlighting"`
 }
 
+// handleResponse processes Solr response and returns json data or(and) an error
 func handleResponse(resp *http.Response) (solrResp *Response, err error) {
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -52,6 +55,7 @@ func handleResponse(resp *http.Response) (solrResp *Response, err error) {
 		return nil, err
 	}
 
+	// If status is ok, return json data
 	if resp.StatusCode < 400 {
 		return solrResp, nil
 	}
@@ -74,9 +78,11 @@ func Select(cLink, user, passw string, params url.Values, headers map[string]str
 
 	reqURL.Path = path.Join(reqURL.Path, "/select")
 
-	if params.Get("q") == "" {
-		params.Set("q", "*:*")
+	// Only JSON format is supported
+	if params == nil {
+		params = url.Values{}
 	}
+	params.Set("wt", "json")
 
 	reqURL.RawQuery = params.Encode()
 
