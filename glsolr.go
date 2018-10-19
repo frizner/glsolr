@@ -41,8 +41,32 @@ type Response struct {
 	Highlighting   json.RawMessage `json:"highlighting"`
 }
 
+func handleResponse(resp *http.Response) (solrResp *Response, err error) {
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	json.Unmarshal(respBody, &solrResp)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode < 400 {
+		return solrResp, nil
+	}
+
+	if msg := solrResp.Error.Msg; msg != "" {
+		err = fmt.Errorf("%s. %s", resp.Status, msg)
+	} else {
+		err = fmt.Errorf("%s", resp.Status)
+	}
+
+	return nil, err
+}
+
 // Select makes select request to a Solr collection
-func Select(cLink, user, passw string, params url.Values, headers map[string]string, client *http.Client) (*Response, error) {
+func Select(cLink, user, passw string, params url.Values, headers map[string]string, client *http.Client) (solrResp *Response, err error) {
 	reqURL, err := url.Parse(cLink)
 	if err != nil {
 		return nil, err
@@ -80,27 +104,7 @@ func Select(cLink, user, passw string, params url.Values, headers map[string]str
 		return nil, err
 	}
 
-	// Return a response status of  as a golang error
-	if resp.StatusCode >= 400 && resp.StatusCode < 500 {
-		return nil, fmt.Errorf(resp.Status)
-	}
-
-	respBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var solrResp Response
-	err = json.Unmarshal(respBody, &solrResp)
-	if err != nil {
-		return nil, err
-	}
-
-	// Return Solr error as golang error
-	if resp.StatusCode >= 500 {
-		return &solrResp, fmt.Errorf(solrResp.Error.Msg)
-	}
-	return &solrResp, nil
+	return handleResponse(resp)
 }
 
 // CursorSelect returns generator as channel to receive results of a cursor select query or error
