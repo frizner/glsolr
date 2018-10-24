@@ -8,4 +8,4 @@
 - Cursor select query.
 
 ### License
-`sglsolr` is released under the MIT License. See [LICENSE](https://github.com/frizner/glsolr/blob/master/LICENSE).
+`glsolr` is released under the MIT License. See [LICENSE](https://github.com/frizner/glsolr/blob/master/LICENSE).
