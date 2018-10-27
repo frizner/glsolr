@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -60,13 +61,58 @@ func handleResponse(resp *http.Response) (solrResp *Response, err error) {
 		return solrResp, nil
 	}
 
-	if msg := solrResp.Error.Msg; msg != "" {
-		err = fmt.Errorf("%s. %s", resp.Status, msg)
+	// if solrResp.Error.Msg != "" {
+	if solrResp != nil && solrResp.Error.Msg != "" {
+		err = fmt.Errorf("%s. %s", resp.Status, solrResp.Error.Msg)
 	} else {
 		err = fmt.Errorf("%s", resp.Status)
 	}
 
 	return nil, err
+}
+
+// Update func makes update request to a Solr collection
+func Update(cLink, user, passw string, data io.Reader, params url.Values, headers map[string]string, client *http.Client) (solrResp *Response, err error) {
+	reqURL, err := url.Parse(cLink)
+	if err != nil {
+		return nil, err
+	}
+
+	reqURL.Path = path.Join(reqURL.Path, "/update")
+
+	if params == nil {
+		params = url.Values{}
+	}
+
+	params.Set("wt", "json")
+
+	reqURL.RawQuery = params.Encode()
+
+	// Create request
+	req, err := http.NewRequest(http.MethodPost, reqURL.String(), data)
+	if err != nil {
+		return nil, err
+	}
+
+	// Add headers
+	for k, v := range headers {
+		req.Header.Add(k, v)
+	}
+
+	// Add autorization if user is set
+	if user != "" {
+		userPass := fmt.Sprintf("%s:%s", user, passw)
+		basicCred := base64.StdEncoding.EncodeToString([]byte(userPass))
+		req.Header.Add("Authorization", fmt.Sprintf("Basic %s", basicCred))
+	}
+
+	// Make the request
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return handleResponse(resp)
 }
 
 // Select makes select request to a Solr collection
